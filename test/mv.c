@@ -6,29 +6,33 @@
 
 char buf[BUFSIZE];
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
   int src, dst, amount;
 
-  if (argc!=3) {
+  if (argc != 3)
+  {
     printf("Usage: cp <src> <dst>\n");
     return 1;
   }
 
   src = open(argv[1]);
-  if (src==-1) {
+  if (src == -1)
+  {
     printf("Open to open %s\n", argv[1]);
     return 1;
   }
 
   creat(argv[2]);
   dst = open(argv[2]);
-  if (dst==-1) {
+  if (dst == -1)
+  {
     printf("Unable to create %s\n", argv[2]);
     return 1;
   }
 
-  while ((amount = read(src, buf, BUFSIZE))>0) {
+  while ((amount = read(src, buf, BUFSIZE)) > 0)
+  {
     write(dst, buf, amount);
   }
 

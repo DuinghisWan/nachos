@@ -1,15 +1,16 @@
 #include "stdlib.h"
 
 /* copies src to dst, returning dst */
-char *strcpy(char *dst, const char *src) {
-  int n=0;
+char *strcpy(char *dst, const char *src)
+{
+  int n = 0;
   char *result = dst;
-  
-  do {
+
+  do
+  {
     *(dst++) = *src;
     n++;
-  }
-  while (*(src++) != 0);
+  } while (*(src++) != 0);
 
   return result;
 }

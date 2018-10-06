@@ -8,23 +8,22 @@ package nachos.machine;
  */
 public interface ElevatorControllerInterface extends Runnable {
     /**
-     * Initialize this elevator controller. The controller will access the
-     * elevator bank through <i>controls</i>. This constructor should return
-     * immediately after this controller is initialized, but not until the
-     * interupt handler is set. The controller will start receiving events
-     * after this method returns, but potentially before <tt>run()</tt> is
-     * called.
+     * Initialize this elevator controller. The controller will access the elevator
+     * bank through <i>controls</i>. This constructor should return immediately
+     * after this controller is initialized, but not until the interupt handler is
+     * set. The controller will start receiving events after this method returns,
+     * but potentially before <tt>run()</tt> is called.
      *
-     * @param	controls	the controller's interface to the elevator
-     *				bank. The controller must not attempt to access
-     *				the elevator bank in <i>any</i> other way.
+     * @param controls the controller's interface to the elevator bank. The
+     *                 controller must not attempt to access the elevator bank in
+     *                 <i>any</i> other way.
      */
     public void initialize(ElevatorControls controls);
 
     /**
      * Cause the controller to use the provided controls to receive and process
-     * requests from riders. This method should not return, but instead should
-     * call <tt>controls.finish()</tt> when the controller is finished.
+     * requests from riders. This method should not return, but instead should call
+     * <tt>controls.finish()</tt> when the controller is finished.
      */
     public void run();
 

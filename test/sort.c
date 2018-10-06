@@ -9,39 +9,41 @@
 #include "syscall.h"
 
 /* size of physical memory; with code, we'll run out of space! */
-#define SORTSIZE	256
-#define SORTSHIFT	0
+#define SORTSIZE 256
+#define SORTSHIFT 0
 
-int array[SORTSIZE<<SORTSHIFT];
+int array[SORTSIZE << SORTSHIFT];
 
-#define	A(i)	(array[(i)<<SORTSHIFT])
+#define A(i) (array[(i) << SORTSHIFT])
 
-void swap(int* x, int* y)
+void swap(int *x, int *y)
 {
   int temp = *x;
   *x = *y;
   *y = temp;
 }
 
-int
-main()
+int main()
 {
   int i, j;
-  
+
   /* first initialize the array, in reverse sorted order */
-  for (i=0; i<SORTSIZE; i++)
-    A(i) = (SORTSIZE-1)-i;
+  for (i = 0; i < SORTSIZE; i++)
+    A(i) = (SORTSIZE - 1) - i;
 
   /* then sort! */
-  for (i=0; i<SORTSIZE-1; i++) {
-    for (j=i; j<SORTSIZE; j++) {
+  for (i = 0; i < SORTSIZE - 1; i++)
+  {
+    for (j = i; j < SORTSIZE; j++)
+    {
       if (A(i) > A(j))
-	swap(&A(i), &A(j));
+        swap(&A(i), &A(j));
     }
   }
 
   /* and last, verify */
-  for (i=0; i<SORTSIZE; i++) {
+  for (i = 0; i < SORTSIZE; i++)
+  {
     if (A(i) != i)
       return 1;
   }

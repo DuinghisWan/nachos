@@ -1,11 +1,12 @@
 #include "stdlib.h"
 
 /* lexicographically compares a and b up to n chars */
-int strncmp(const char* a, const char* b, int n)
+int strncmp(const char *a, const char *b, int n)
 {
   assert(n > 0);
-  
-  do {
+
+  do
+  {
     if (*a < *b)
       return -1;
     if (*a > *b)
@@ -13,8 +14,7 @@ int strncmp(const char* a, const char* b, int n)
     n--;
     a++;
     b++;
-  }
-  while (n > 0);
+  } while (n > 0);
 
   return 0;
 }

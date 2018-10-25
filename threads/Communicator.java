@@ -20,16 +20,12 @@ public class Communicator {
 
     private Lock mutex;
     
-    private Condition okToListen;
+    private Condition readyToListen;
     private int waitingListeners = 0;
+    
+    private Condition readyToSpeak;
 
-    private Condition okToSpeak;
-    private int waitingSpeakers = 0;
-
-
-    private Condition messageReady;
     private int currentMessage = 0;
-
     private boolean validMessage = false;
 
     /**
@@ -37,9 +33,8 @@ public class Communicator {
      */
     public Communicator() {
         this.mutex = new Lock();
-        this.okToListen = new Condition(mutex);
-        this.okToSpeak = new Condition(mutex);
-        this.messageReady = new Condition(mutex);
+        this.readyToListen = new Condition(mutex);
+        this.readyToSpeak = new Condition(mutex);
     }
 
     /**
@@ -54,21 +49,16 @@ public class Communicator {
      */
     public void speak(int word) {
         mutex.acquire();
-        waitingSpeakers++;
 
-        if (waitingListeners == 0) {
-            okToSpeak.sleep();
+        // Wait for there to be a listener to speak to
+        while (waitingListeners == 0) {
+            readyToSpeak.sleep();
         }
 
-        if (!mutex.isHeldByCurrentThread()) {
-            mutex.acquire();
-        }
-
+        // Send a message to the listener
         currentMessage = word;
         validMessage = true;
-        waitingSpeakers--;
-        
-        messageReady.wake();
+        readyToListen.wake();
 
         mutex.release();
     }
@@ -82,23 +72,17 @@ public class Communicator {
     public int listen() {
         mutex.acquire();
         waitingListeners++;
-        
-        while (waitingSpeakers == 0) {
-            okToListen.sleep();
-        }
-        
-        while(!validMessage) {
-            okToSpeak.wake();
-            messageReady.sleep();
+
+        // Wait for a speaker to speak
+        while (!validMessage) {
+            readyToSpeak.wake();
+            readyToListen.sleep();
         }
 
-        if (!mutex.isHeldByCurrentThread()) {
-            mutex.acquire();
-        }
-
-        waitingListeners--;
+        // Read message and return it
         int return_message = this.currentMessage;
         validMessage = false;
+        waitingListeners--;
         
         mutex.release();
         return return_message;

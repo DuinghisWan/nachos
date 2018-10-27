@@ -50,17 +50,19 @@ public class Communicator {
     public void speak(int word) {
         mutex.acquire();
 
-        // Wait for there to be a listener to speak to
-        while (waitingListeners == 0) {
-            readyToSpeak.sleep();
+        try {
+            // Wait for there to be a listener to speak to
+            while (waitingListeners == 0) {
+                readyToSpeak.sleep();
+            }
+
+            // Send a message to the listener
+            currentMessage = word;
+            validMessage = true;
+            readyToListen.wake();
+        } finally {
+            mutex.release();
         }
-
-        // Send a message to the listener
-        currentMessage = word;
-        validMessage = true;
-        readyToListen.wake();
-
-        mutex.release();
     }
 
     /**
@@ -71,20 +73,24 @@ public class Communicator {
      */
     public int listen() {
         mutex.acquire();
-        waitingListeners++;
 
-        // Wait for a speaker to speak
-        while (!validMessage) {
-            readyToSpeak.wake();
-            readyToListen.sleep();
+        try {
+            waitingListeners++;
+
+            // Wait for a speaker to speak
+            while (!validMessage) {
+                readyToSpeak.wake();
+                readyToListen.sleep();
+            }
+
+            // Read message and return it
+            int return_message = this.currentMessage;
+            validMessage = false;
+            waitingListeners--;
+
+            return return_message;
+        } finally {
+            mutex.release();
         }
-
-        // Read message and return it
-        int return_message = this.currentMessage;
-        validMessage = false;
-        waitingListeners--;
-        
-        mutex.release();
-        return return_message;
     }
 }

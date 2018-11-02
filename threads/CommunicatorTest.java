@@ -8,8 +8,8 @@ import java.util.ArrayList;
 
 public class CommunicatorTest {
     /**
-     * Test this class in a variety of situations
-     * Runs automatically when ThreadedKernel is started
+     * Test this class in a variety of situations Runs automatically when
+     * ThreadedKernel is started
      */
     public static void test() {
         CommunicatorTest tester = new CommunicatorTest();
@@ -59,6 +59,7 @@ public class CommunicatorTest {
         speaker.join();
         listener.join();
 
-        Lib.assertTrue(runListener.getWord() == 0, String.format("Single Test: [ Expected: 1000, Actual: %d ]", runListener.getWord()) );
+        Lib.assertTrue(runListener.getWord() == 0,
+                String.format("Single Test: [ Expected: 1000, Actual: %d ]", runListener.getWord()));
     }
 }

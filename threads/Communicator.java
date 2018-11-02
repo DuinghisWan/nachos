@@ -21,10 +21,10 @@ import java.util.LinkedList;
 public class Communicator {
 
     private Lock mutex;
-    
+
     private Condition readyToListen;
     private int waitingListeners;
-    
+
     private Condition readyToSpeak;
     private Condition readyToReturn;
 
@@ -60,16 +60,16 @@ public class Communicator {
                 readyToListen.wake();
                 readyToSpeak.sleep();
             }
-            
+
             // Send a message to the listener
             currentMessage = word;
             validMessage = true;
             readyToListen.wakeAll();
 
             System.out.println(String.format(KThread.currentThread().toString() + "\t\tSpeaking : %d", word));
-            
+
             // Wait for listener to recieve message
-            while(validMessage) {
+            while (validMessage) {
                 readyToReturn.sleep();
             }
         } finally {
@@ -85,7 +85,7 @@ public class Communicator {
      */
     public int listen() {
         int return_message;
-        
+
         mutex.acquire();
         try {
             waitingListeners++;
@@ -102,7 +102,7 @@ public class Communicator {
             waitingListeners--;
 
             System.out.println(String.format(KThread.currentThread().toString() + "\t\tListening: %d", return_message));
-            
+
             // Signal speaker that it can return
             readyToReturn.wakeAll();
         } finally {
@@ -113,8 +113,7 @@ public class Communicator {
     }
 
     /**
-     * Calls the corresponding testing class
-     * Called when ThreadedKernel runs
+     * Calls the corresponding testing class, called when ThreadedKernel runs
      */
     public static void selfTest() {
         CommunicatorTest.test();

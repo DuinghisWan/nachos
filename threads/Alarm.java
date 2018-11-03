@@ -39,9 +39,9 @@ public class Alarm {
 
         Machine.interrupt().disable();
 
-        
+        //Compares Long variables. If condition is true, thread is removed from the queue.
         while(!q.isEmpty() && q.peek().waitTime <= time){
-            System.out.println(q.peek().toString());
+            //System.out.println(q.peek().toString());
             AlarmThread thread = q.remove();
             thread.kthread.ready(); 
         }
@@ -68,12 +68,14 @@ public class Alarm {
         Machine.interrupt().disable();
 
         long wakeTime = Machine.timer().getTime() + x;
+
+        //adds initialized thread after wakeTime
         q.add(new AlarmThread(KThread.currentThread(), wakeTime));
         KThread.sleep();
 
         Machine.interrupt().enable();
 
-        //while (wakeTime > Machine.timer().getTime())
+        while (wakeTime > Machine.timer().getTime())
         KThread.yield();
     }
     /**
@@ -83,11 +85,17 @@ public class Alarm {
         KThread kthread;
         long waitTime;
 
+        /**
+		 * Allocate a new <tt>AlarmThread</tt> object and associate it with a
+		 * specified Kthread and waitTime.
+		 */
         public AlarmThread(KThread kt, long t){
             kthread = kt;
             waitTime = t;
         }
-
+        /**
+		 * Compares two Long waitTimes and returns 1, 0, -1.
+		 */
         @Override
         public int compareTo(AlarmThread test){
             return(new Long(this.waitTime).compareTo(test.waitTime));

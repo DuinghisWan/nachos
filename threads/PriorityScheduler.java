@@ -172,8 +172,8 @@ public class PriorityScheduler extends Scheduler {
 			Lib.assertTrue(Machine.interrupt().disabled());
 			System.out.println("------ Thread Queue ------");
 
-			for (ThreadState thread: pQueue) {
-				System.out.println(thread.getThread().toString());
+			for (ThreadState threadState : pQueue) {
+				System.out.println(threadState.toString());
 			}
 
 			System.out.println("--------------------------");
@@ -195,7 +195,7 @@ public class PriorityScheduler extends Scheduler {
 	 *
 	 * @see nachos.threads.KThread#schedulingState
 	 */
-	protected class ThreadState implements Comparable<ThreadState>{
+	protected class ThreadState implements Comparable<ThreadState> {
 		/**
 		 * Allocate a new <tt>ThreadState</tt> object and associate it with the
 		 * specified thread.
@@ -224,7 +224,7 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public int getEffectivePriority() {
 			// Returned cached value if it has been set
-			if (effectivePriority != priorityMinimum-1) {
+			if (effectivePriority != priorityMinimum - 1) {
 				return effectivePriority;
 			}
 			// implement me
@@ -284,35 +284,57 @@ public class PriorityScheduler extends Scheduler {
 
 		/**
 		 * Compares this ThreadState's priority with anothers
+		 * 
 		 * @param other The ThreadState that's being compared to
-		 * @return -1 if 'this' is lower priority, 0 for equal priority, and 1 for higher priority
+		 * @return -1 if 'this' is lower priority, 0 for equal priority, and 1 for
+		 *         higher priority
 		 */
 		@Override
 		public int compareTo(ThreadState other) {
 			return new Integer(this.getPriority()).compareTo(other.getPriority());
 		}
 
+		/**
+		 * Adds on to KThread's <tt>toString</tt> by also showing the priority and
+		 * effective priority of the thread
+		 * 
+		 * @return the formatted string
+		 * 
+		 * @see nachos.threads.KThread#toString
+		 */
+		@Override
+		public String toString() {
+			return String.format(thread.toString() + "\t Pri: %d\t Eff: %d", this.getPriority(),
+					this.getEffectivePriority());
+		}
+
 		/** The thread with which this object is associated. */
 		protected KThread thread;
 		/** The priority of the associated thread. */
 		protected int priority;
-		/** The effective priority of the associated thread. Defaults to a sentinel of the minimum priority - 1 */
-		protected int effectivePriority = priorityMinimum-1;
+		/**
+		 * The effective priority of the associated thread. Defaults to a sentinel of
+		 * the minimum priority - 1
+		 */
+		protected int effectivePriority = priorityMinimum - 1;
 	}
 
 	/**
-	 * Comparator for effective priorities, used for comparing ThreadStates with priority donation enabled
+	 * Comparator for effective priorities, used for comparing ThreadStates with
+	 * priority donation enabled
 	 */
 	public static class DonationComparator implements Comparator<ThreadState> {
 
 		/**
 		 * Compares two ThreadStates based on their effective priorities
-		 * @param first The first thread state to be compared
+		 * 
+		 * @param first  The first thread state to be compared
 		 * @param second The second thread state to be compared
-		 * @return -1 if the first thread has a lower priority, 0 if an equal priority, and 1 if a higher priority
+		 * @return -1 if the first thread has a lower priority, 0 if an equal priority,
+		 *         and 1 if a higher priority
 		 */
 		@Override
-    	public int compare(ThreadState first, ThreadState second) {
+		public int compare(ThreadState first, ThreadState second) {
 			return new Integer(first.getEffectivePriority()).compareTo(second.getEffectivePriority());
 		}
 	}

@@ -1,7 +1,7 @@
 package nachos.threads;
 
 import nachos.machine.*;
-import nachos.threads.Condition;
+import nachos.threads.Condition2;
 import nachos.threads.Lock;
 import nachos.threads.KThread;
 

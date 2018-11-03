@@ -6,6 +6,7 @@ import java.util.TreeSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.PriorityQueue;
+import java.util.Comparator;
 
 /**
  * A scheduler that chooses threads based on their priorities.
@@ -127,7 +128,13 @@ public class PriorityScheduler extends Scheduler {
 	protected class PriorityQueue extends ThreadQueue {
 		PriorityQueue(boolean transferPriority) {
 			this.transferPriority = transferPriority;
-			this.pQueue = new java.util.PriorityQueue<ThreadState>();
+
+			// Compare using effective priorities if transferPriority is true
+			if (transferPriority) {
+				this.pQueue = new java.util.PriorityQueue<ThreadState>(11, new DonationComparator());
+			} else {
+				this.pQueue = new java.util.PriorityQueue<ThreadState>(11);
+			}
 		}
 
 		public void waitForAccess(KThread thread) {
@@ -216,6 +223,10 @@ public class PriorityScheduler extends Scheduler {
 		 * @return the effective priority of the associated thread.
 		 */
 		public int getEffectivePriority() {
+			// Returned cached value if it has been set
+			if (effectivePriority != priorityMinimum-1) {
+				return effectivePriority;
+			}
 			// implement me
 			return priority;
 		}
@@ -238,9 +249,8 @@ public class PriorityScheduler extends Scheduler {
 			if (this.priority == priority)
 				return;
 
-			this.priority = priority;
-
-			// implement me
+			// Ensure priority falls between priorityMinimum and priorityMaximum
+			this.priority = Math.min(Math.max(priority, priorityMinimum), priorityMaximum);
 		}
 
 		/**
@@ -275,7 +285,7 @@ public class PriorityScheduler extends Scheduler {
 		/**
 		 * Compares this ThreadState's priority with anothers
 		 * @param other The ThreadState that's being compared to
-		 * @return -1 if 'this' is lower priority, 0 if equal priority, 1 if 'this' is higher priority
+		 * @return -1 if 'this' is lower priority, 0 for equal priority, and 1 for higher priority
 		 */
 		@Override
 		public int compareTo(ThreadState other) {
@@ -286,5 +296,24 @@ public class PriorityScheduler extends Scheduler {
 		protected KThread thread;
 		/** The priority of the associated thread. */
 		protected int priority;
+		/** The effective priority of the associated thread. Defaults to a sentinel of the minimum priority - 1 */
+		protected int effectivePriority = priorityMinimum-1;
+	}
+
+	/**
+	 * Comparator for effective priorities, used for comparing ThreadStates with priority donation enabled
+	 */
+	public static class DonationComparator implements Comparator<ThreadState> {
+
+		/**
+		 * Compares two ThreadStates based on their effective priorities
+		 * @param first The first thread state to be compared
+		 * @param second The second thread state to be compared
+		 * @return -1 if the first thread has a lower priority, 0 if an equal priority, and 1 if a higher priority
+		 */
+		@Override
+    	public int compare(ThreadState first, ThreadState second) {
+			return new Integer(first.getEffectivePriority()).compareTo(second.getEffectivePriority());
+		}
 	}
 }

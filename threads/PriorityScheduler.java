@@ -251,6 +251,9 @@ public class PriorityScheduler extends Scheduler {
 
 			// Ensure priority falls between priorityMinimum and priorityMaximum
 			this.priority = Math.min(Math.max(priority, priorityMinimum), priorityMaximum);
+
+			// Old effective priority is now invalid
+			this.effectivePriority = priorityMinimum - 1;
 		}
 
 		/**
@@ -283,7 +286,7 @@ public class PriorityScheduler extends Scheduler {
 		}
 
 		/**
-		 * Compares this ThreadState's priority with anothers
+		 * Compares this ThreadState's priority with another's
 		 * 
 		 * @param other The ThreadState that's being compared to
 		 * @return -1 if 'this' is lower priority, 0 for equal priority, and 1 for
@@ -317,6 +320,8 @@ public class PriorityScheduler extends Scheduler {
 		 * the minimum priority - 1
 		 */
 		protected int effectivePriority = priorityMinimum - 1;
+
+		protected PriorityQueue waitQueue = null;
 	}
 
 	/**

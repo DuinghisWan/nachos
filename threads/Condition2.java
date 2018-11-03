@@ -4,10 +4,6 @@ import nachos.machine.*;
 
 import java.util.LinkedList;
 
-
-    
-
-
 /**
  * An implementation of condition variables that disables interrupt()s for
  * synchronization.
@@ -19,7 +15,7 @@ import java.util.LinkedList;
  */
 public class Condition2 {
 
-    LinkedList<KThread> ThreadQueue;
+    LinkedList<KThread> threadQueue;
 
     /**
      * Allocate a new condition variable.
@@ -31,7 +27,7 @@ public class Condition2 {
      */
     public Condition2(Lock conditionLock) {
         this.conditionLock = conditionLock;
-        this.ThreadQueue = new LinkedList<KThread>();
+        this.threadQueue = new LinkedList<KThread>();
     }
 
     /**
@@ -46,9 +42,9 @@ public class Condition2 {
         conditionLock.release();
         boolean intStatus = Machine.interrupt().disable();
 
-       ThreadQueue.add(KThread.currentThread());
-       KThread.sleep();
-        
+        threadQueue.add(KThread.currentThread());
+        KThread.sleep();
+
         Machine.interrupt().restore(intStatus);
 
         conditionLock.acquire();
@@ -60,12 +56,12 @@ public class Condition2 {
      */
     public void wake() {
         Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-        if (ThreadQueue.isEmpty()){
+        if (threadQueue.isEmpty()) {
             return;
         }
         boolean intStatus = Machine.interrupt().disable();
 
-        ThreadQueue.remove().ready();
+        threadQueue.remove().ready();
 
         Machine.interrupt().restore(intStatus);
     }
@@ -77,11 +73,11 @@ public class Condition2 {
     public void wakeAll() {
         Lib.assertTrue(conditionLock.isHeldByCurrentThread());
 
-        while(ThreadQueue.peek() == null){
+        while (threadQueue.peek() == null) {
             wake();
         }
     }
 
     private Lock conditionLock;
-    
+
 }

@@ -139,17 +139,20 @@ public class PriorityScheduler extends Scheduler {
 
 		public void waitForAccess(KThread thread) {
 			Lib.assertTrue(Machine.interrupt().disabled());
+			getThreadState(thread).resetEffectivePriority();
 			getThreadState(thread).waitForAccess(this);
 		}
 
 		public void acquire(KThread thread) {
 			Lib.assertTrue(Machine.interrupt().disabled());
+			owner = getThreadState(thread);
 			getThreadState(thread).acquire(this);
 		}
 
 		public KThread nextThread() {
 			Lib.assertTrue(Machine.interrupt().disabled());
 			if (!pQueue.isEmpty()) {
+				//print();
 				return pQueue.poll().getThread();
 			}
 			return null;
@@ -166,6 +169,15 @@ public class PriorityScheduler extends Scheduler {
 				return pQueue.peek();
 			}
 			return null;
+		}
+
+		/**
+		 * Add a thread to this queue.
+		 * 
+		 * @param thread the thread to add to the queue.
+		 */
+		public void addThread(ThreadState thread) {
+			pQueue.add(thread);
 		}
 
 		public void print() {
@@ -185,7 +197,15 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public boolean transferPriority;
 
-		public java.util.PriorityQueue<ThreadState> pQueue;
+		/**
+		 * The priority queue for the thread states
+		 */
+		protected java.util.PriorityQueue<ThreadState> pQueue;
+
+		/**
+		 * The current owner of the thread queue
+		 */
+		protected ThreadState owner = null;
 	}
 
 	/**
@@ -231,6 +251,10 @@ public class PriorityScheduler extends Scheduler {
 			return priority;
 		}
 
+		public void resetEffectivePriority() {
+			this.effectivePriority = priorityMinimum - 1;
+		}
+
 		/**
 		 * Return the associated thread.
 		 * 
@@ -253,7 +277,7 @@ public class PriorityScheduler extends Scheduler {
 			this.priority = Math.min(Math.max(priority, priorityMinimum), priorityMaximum);
 
 			// Old effective priority is now invalid
-			this.effectivePriority = priorityMinimum - 1;
+			resetEffectivePriority();
 		}
 
 		/**
@@ -268,7 +292,7 @@ public class PriorityScheduler extends Scheduler {
 		 * @see nachos.threads.ThreadQueue#waitForAccess
 		 */
 		public void waitForAccess(PriorityQueue waitQueue) {
-			// implement me
+			waitQueue.addThread(this);
 		}
 
 		/**
@@ -289,12 +313,12 @@ public class PriorityScheduler extends Scheduler {
 		 * Compares this ThreadState's priority with another's
 		 * 
 		 * @param other The ThreadState that's being compared to
-		 * @return -1 if 'this' is lower priority, 0 for equal priority, and 1 for
-		 *         higher priority
+		 * @return -1 if 'this' is higher priority, 0 for equal priority, and 1 for
+		 *         lower priority
 		 */
 		@Override
 		public int compareTo(ThreadState other) {
-			return new Integer(this.getPriority()).compareTo(other.getPriority());
+			return new Integer(other.getPriority()).compareTo(this.getPriority());
 		}
 
 		/**
@@ -335,12 +359,12 @@ public class PriorityScheduler extends Scheduler {
 		 * 
 		 * @param first  The first thread state to be compared
 		 * @param second The second thread state to be compared
-		 * @return -1 if the first thread has a lower priority, 0 if an equal priority,
-		 *         and 1 if a higher priority
+		 * @return -1 if the first thread has a higher priority, 0 if an equal priority,
+		 *         and 1 if a lower priority
 		 */
 		@Override
 		public int compare(ThreadState first, ThreadState second) {
-			return new Integer(first.getEffectivePriority()).compareTo(second.getEffectivePriority());
+			return new Integer(second.getEffectivePriority()).compareTo(first.getEffectivePriority());
 		}
 	}
 }

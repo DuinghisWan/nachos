@@ -1,5 +1,7 @@
 package nachos.threads;
 
+import java.util.PriorityQueue;
+
 import nachos.machine.*;
 
 /**
@@ -9,11 +11,14 @@ import nachos.machine.*;
 public class Alarm {
     /**
      * Allocate a new Alarm. Set the machine's timer interrupt handler to this
-     * alarm's callback.
-     *
+     * alarm's callback
+     * 
      * <p>
      * <b>Note</b>: Nachos will not function correctly with more than one alarm.
      */
+
+    public PriorityQueue<AlarmThread> q = new PriorityQueue<AlarmThread>();
+
     public Alarm() {
         Machine.timer().setInterruptHandler(new Runnable() {
             public void run() {
@@ -29,7 +34,21 @@ public class Alarm {
      * run.
      */
     public void timerInterrupt() {
-        KThread.currentThread().yield();
+        //Machine current time
+        long time = Machine.timer().getTime();
+
+        Machine.interrupt().disable();
+
+        
+        while(!q.isEmpty() && q.peek().waitTime <= time){
+            System.out.println(q.peek().toString());
+            AlarmThread thread = q.remove();
+            thread.kthread.ready(); 
+        }
+
+        Machine.interrupt().enable();
+        
+        KThread.yield();
     }
 
     /**
@@ -46,8 +65,33 @@ public class Alarm {
      */
     public void waitUntil(long x) {
         // for now, cheat just to get something working (busy waiting is bad)
+        Machine.interrupt().disable();
+
         long wakeTime = Machine.timer().getTime() + x;
-        while (wakeTime > Machine.timer().getTime())
-            KThread.yield();
+        q.add(new AlarmThread(KThread.currentThread(), wakeTime));
+        KThread.sleep();
+
+        Machine.interrupt().enable();
+
+        //while (wakeTime > Machine.timer().getTime())
+        KThread.yield();
+    }
+    /**
+     * A class that creates a constructor to initialize variables for a current thread
+     */
+    class AlarmThread implements Comparable<AlarmThread>{
+        KThread kthread;
+        long waitTime;
+
+        public AlarmThread(KThread kt, long t){
+            kthread = kt;
+            waitTime = t;
+        }
+
+        @Override
+        public int compareTo(AlarmThread test){
+            return(new Long(this.waitTime).compareTo(test.waitTime));
+        }
+
     }
 }

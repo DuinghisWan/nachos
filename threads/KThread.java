@@ -192,6 +192,16 @@ public class KThread {
 
         Machine.interrupt().disable();
 
+        ThreadQueue currentQue = currentThread.JoinQue;
+
+        if (currentQue != null ){
+            KThread thread = currentQue.nextThread();
+            if (thread != null){
+                thread.ready();
+                thread = currentQue.nextThread();
+            }
+        }
+
         Machine.autoGrader().finishingCurrentThread();
 
         Lib.assertTrue(toBeDestroyed == null);
@@ -277,10 +287,36 @@ public class KThread {
      */
     public void join() {
         Lib.debug(dbgThread, "Joining to thread: " + toString());
+        
 
+       
         Lib.assertTrue(this != currentThread);
 
-    }
+        
+        boolean intStatus = Machine.interrupt().disable();
+
+
+        if(JoinQue == null){
+
+            JoinQue = ThreadedKernel.scheduler.newThreadQueue(true);
+            JoinQue.acquire(this);
+
+        }
+        
+
+        if( status != statusFinished){
+            
+            JoinQue.waitForAccess(currentThread);
+           
+            KThread.sleep();
+        }
+
+        Machine.interrupt().restore(intStatus);
+
+
+        }
+
+        
 
     /**
      * Create the idle thread. Whenever there are no threads ready to be run, and
@@ -433,6 +469,7 @@ public class KThread {
     private String name = "(unnamed thread)";
     private Runnable target;
     private TCB tcb;
+    private ThreadQueue JoinQue = null;
 
     /**
      * Unique identifer for this thread. Used to deterministically compare threads.

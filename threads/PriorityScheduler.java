@@ -5,6 +5,7 @@ import nachos.machine.*;
 import java.util.TreeSet;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.PriorityQueue;
 
 /**
  * A scheduler that chooses threads based on their priorities.
@@ -126,6 +127,7 @@ public class PriorityScheduler extends Scheduler {
 	protected class PriorityQueue extends ThreadQueue {
 		PriorityQueue(boolean transferPriority) {
 			this.transferPriority = transferPriority;
+			this.pQueue = new java.util.PriorityQueue<ThreadState>();
 		}
 
 		public void waitForAccess(KThread thread) {
@@ -140,7 +142,9 @@ public class PriorityScheduler extends Scheduler {
 
 		public KThread nextThread() {
 			Lib.assertTrue(Machine.interrupt().disabled());
-			// implement me
+			if (!pQueue.isEmpty()) {
+				return pQueue.poll().getThread();
+			}
 			return null;
 		}
 
@@ -151,13 +155,21 @@ public class PriorityScheduler extends Scheduler {
 		 * @return the next thread that <tt>nextThread()</tt> would return.
 		 */
 		protected ThreadState pickNextThread() {
-			// implement me
+			if (!pQueue.isEmpty()) {
+				return pQueue.peek();
+			}
 			return null;
 		}
 
 		public void print() {
 			Lib.assertTrue(Machine.interrupt().disabled());
-			// implement me (if you want)
+			System.out.println("------ Thread Queue ------");
+
+			for (ThreadState thread: pQueue) {
+				System.out.println(thread.getThread().toString());
+			}
+
+			System.out.println("--------------------------");
 		}
 
 		/**
@@ -165,6 +177,8 @@ public class PriorityScheduler extends Scheduler {
 		 * the owning thread.
 		 */
 		public boolean transferPriority;
+
+		public java.util.PriorityQueue<ThreadState> pQueue;
 	}
 
 	/**
@@ -174,7 +188,7 @@ public class PriorityScheduler extends Scheduler {
 	 *
 	 * @see nachos.threads.KThread#schedulingState
 	 */
-	protected class ThreadState {
+	protected class ThreadState implements Comparable<ThreadState>{
 		/**
 		 * Allocate a new <tt>ThreadState</tt> object and associate it with the
 		 * specified thread.
@@ -204,6 +218,15 @@ public class PriorityScheduler extends Scheduler {
 		public int getEffectivePriority() {
 			// implement me
 			return priority;
+		}
+
+		/**
+		 * Return the associated thread.
+		 * 
+		 * @return the associated thread.
+		 */
+		public KThread getThread() {
+			return thread;
 		}
 
 		/**
@@ -247,6 +270,16 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public void acquire(PriorityQueue waitQueue) {
 			// implement me
+		}
+
+		/**
+		 * Compares this ThreadState's priority with anothers
+		 * @param other The ThreadState that's being compared to
+		 * @return -1 if 'this' is lower priority, 0 if equal priority, 1 if 'this' is higher priority
+		 */
+		@Override
+		public int compareTo(ThreadState other) {
+			return new Integer(this.getPriority()).compareTo(other.getPriority());
 		}
 
 		/** The thread with which this object is associated. */

@@ -140,9 +140,13 @@ public class PriorityScheduler extends Scheduler {
 
 		public void waitForAccess(KThread thread) {
 			Lib.assertTrue(Machine.interrupt().disabled());
+
+			pQueue.add(getThreadState(thread));
+
 			for (ThreadState threadState : pQueue) {
 				threadState.resetEffectivePriority();
 			}
+
 			getThreadState(thread).waitForAccess(this);
 		}
 
@@ -155,6 +159,7 @@ public class PriorityScheduler extends Scheduler {
 			Lib.assertTrue(Machine.interrupt().disabled());
 
 			if (pickNextThread() == null) {
+				owner = null;
 				return null;
 			}
 
@@ -170,10 +175,7 @@ public class PriorityScheduler extends Scheduler {
 		 * @return the next thread that <tt>nextThread()</tt> would return.
 		 */
 		public ThreadState pickNextThread() {
-			if (!pQueue.isEmpty()) {
-				return pQueue.peek();
-			}
-			return null;
+			return pQueue.peek();
 		}
 
 		/**
@@ -186,24 +188,18 @@ public class PriorityScheduler extends Scheduler {
 		}
 
 		/**
-		 * Prints the contents of the queue
+		 * Prints the contents of the queue.
 		 */
 		public void print() {
 			Lib.assertTrue(Machine.interrupt().disabled());
-			if (pQueue == null) {
-				return;
+
+			System.out.println("------ Thread Queue ------");
+
+			for (ThreadState threadState : pQueue) {
+				System.out.println(threadState.toString());
 			}
 
-			// System.out.println("------ Thread Queue ------");
-
-			// for (ThreadState threadState : pQueue) {
-			// 	if (threadState == null) {
-			// 		break;
-			// 	}
-			// 	System.out.println(threadState.toString());
-			// }
-
-			// System.out.println("--------------------------");
+			System.out.println("--------------------------");
 		}
 
 		/**
@@ -259,32 +255,37 @@ public class PriorityScheduler extends Scheduler {
 		 * @return the effective priority of the associated thread.
 		 */
 		public int getEffectivePriority() {
-			// If the thread isn't waiting on anything, just return normal priority
-
 			// Only recalculate if value isnt cached
 			if (effectivePriority == priorityMinimum - 1) {
-				
-				// Iterate over list of previous queues, probably doing that wrong
+
+				// Iterate over list of old queues this thread is still in
 				for (PriorityQueue previousQueue : previousQueues) {
-					
+
 					// Iterate over the states in those queues
 					for (ThreadState threadState : previousQueue.pQueue) {
 
-						// Get the higher priority from previous queues and set the effective priority to it
-						if (threadState.getPriority() > effectivePriority) {
-							effectivePriority = threadState.getPriority();
+						// Get the higher priority from previous queues and set the effective priority
+						// to it
+						if (threadState != this) {
+							int otherEffectivePriority = threadState.getEffectivePriority();
+							if (otherEffectivePriority > effectivePriority) {
+								effectivePriority = otherEffectivePriority;
+							}
 						}
 					}
 				}
 			}
 
-			// If the max was less than the current priority, use the current priority
+			// If the calculated priority was less than the current priority, use the
+			// current priority
 			effectivePriority = Math.max(effectivePriority, priority);
-			System.out.println(thread.toString() + "\tExit: " + effectivePriority + " Actual: " + priority);
-			
+
 			return effectivePriority;
 		}
 
+		/**
+		 * Resets the effective priority to its sentinel value
+		 */
 		public void resetEffectivePriority() {
 			this.effectivePriority = priorityMinimum - 1;
 		}
@@ -304,8 +305,9 @@ public class PriorityScheduler extends Scheduler {
 		 * @param priority the new priority.
 		 */
 		public void setPriority(int priority) {
-			if (this.priority == priority)
+			if (this.priority == priority) {
 				return;
+			}
 
 			// Ensure priority falls between priorityMinimum and priorityMaximum
 			this.priority = Math.min(Math.max(priority, priorityMinimum), priorityMaximum);
@@ -328,7 +330,7 @@ public class PriorityScheduler extends Scheduler {
 		public void waitForAccess(PriorityQueue waitQueue) {
 			// waitQueues.add(waitQueue);
 			this.waitQueue = waitQueue;
-			waitQueue.addThread(this);
+
 		}
 
 		/**
@@ -342,16 +344,24 @@ public class PriorityScheduler extends Scheduler {
 		 * @see nachos.threads.ThreadQueue#nextThread
 		 */
 		public void acquire(PriorityQueue waitQueue) {
-			resetEffectivePriority();
 			previousQueues.add(waitQueue);
 		}
 
 		/**
-		 * Compares this ThreadState's priority with another's
+		 * Called when this thread is no longer in a waitingQueue anymore.
 		 * 
-		 * @param other The ThreadState that's being compared to
+		 * @param waitQueue the queue that no longer contains this thread.
+		 */
+		public void removeQueue(PriorityQueue waitQueue) {
+			previousQueues.remove(waitQueue);
+		}
+
+		/**
+		 * Compares this ThreadState's priority with another's.
+		 * 
+		 * @param other the ThreadState to compare against.
 		 * @return -1 if 'this' is higher priority, 0 for equal priority, and 1 for
-		 *         lower priority
+		 *         lower priority.
 		 */
 		@Override
 		public int compareTo(ThreadState other) {
@@ -360,9 +370,9 @@ public class PriorityScheduler extends Scheduler {
 
 		/**
 		 * Adds on to KThread's <tt>toString</tt> by also showing the priority and
-		 * effective priority of the thread
+		 * effective priority of the thread.
 		 * 
-		 * @return the formatted string
+		 * @return the formatted string.
 		 * 
 		 * @see nachos.threads.KThread#toString
 		 */
@@ -372,40 +382,46 @@ public class PriorityScheduler extends Scheduler {
 					this.getEffectivePriority());
 		}
 
-		/** The thread with which this object is associated. */
+		/**
+		 * The thread with which this object is associated.
+		 */
 		protected KThread thread;
-		/** The priority of the associated thread. */
+
+		/**
+		 * The priority of the associated thread.
+		 */
 		protected int priority;
+
 		/**
 		 * The effective priority of the associated thread. Defaults to a sentinel of
-		 * the minimum priority - 1
+		 * the minimum priority - 1.
 		 */
 		protected int effectivePriority = priorityMinimum - 1;
 
 		/**
-		 * The queue the thread is currently waiting on
+		 * The queue the thread is currently waiting on.
 		 */
 		protected PriorityQueue waitQueue;
 
 		/**
-		 * Queues that this thread used to be on, probably doing that wrong
+		 * Queues that the thread has been waiting on.
 		 */
 		protected LinkedList<PriorityQueue> previousQueues;
 	}
 
 	/**
 	 * Comparator for effective priorities, used for comparing ThreadStates with
-	 * priority donation enabled
+	 * priority donation enabled.
 	 */
 	public static class DonationComparator implements Comparator<ThreadState> {
 
 		/**
-		 * Compares two ThreadStates based on their effective priorities
+		 * Compares two ThreadStates based on their effective priorities.
 		 * 
-		 * @param first  The first thread state to be compared
-		 * @param second The second thread state to be compared
+		 * @param first  The first thread state to be compared.
+		 * @param second The second thread state to be compared.
 		 * @return -1 if the first thread has a higher priority, 0 if an equal priority,
-		 *         and 1 if a lower priority
+		 *         and 1 if a lower priority.
 		 */
 		@Override
 		public int compare(ThreadState first, ThreadState second) {

@@ -136,7 +136,7 @@ public class Boat
 					boat = Island.Molokai;
 
 				}
-				///////comlink.speak(t_adults +t_kids);
+				comlink.speak(t_adults +t_kids);
 				
 			}
 			if(kids_at_molokai != t_kids)

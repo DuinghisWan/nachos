@@ -62,18 +62,11 @@ public class Boat
 	}
 	static void AdultItinerary()
 	{
-		// while the similation is complete 
+		// while the similation is not complete 
 		while(!(t_adults == adults_at_molokai && t_kids == kids_at_molokai))
 		{
-			// For adults, if they are on this island
-			// yiled, since they cannot go back to Oahu
-			if(boat == Island.Molokai){
-				//KThread.yield();
-				break;
-				// by the thread yielding 
-				// we prevent busy waiting 
-			}
-			else if(boat == Island.Oahu){
+		
+			if(boat == Island.Oahu){
 				// check if there is at least 1 kido on molokai
 				// since we know the total num of kids from the start
 				// if these dont match we know there least 1 kido on molokai
@@ -99,170 +92,142 @@ public class Boat
 						boat = Island.Oahu; // update the boat location
 						myBoat.release();
 					}
-					else // if we  know there are no adults then break...yileding  
-					{
-						break;
-					}
 				}
 			}
 			KThread.yield(); // no adults could be moved 
 		}
 		// if the loop terminates then we know that everyone has moved to molokai
 		// we can now signal the communicator ... the sum of this should end the loop 
-		comlink.speak(kids_at_molokai + kids_at_molokai);
+		comlink.speak(t_indiv);
 	}
 	static void ChildItinerary()
 	{
-		if(boat == Island.Molokai)
+		while(!(t_adults == adults_at_molokai && t_kids == kids_at_molokai))
 		{
-			//myBoat.acquire(); // get lock 
-
-
-			// since for every adult that is sent... one child is sent back 
-			// we only need to check if all adults have arrived on island
+			// if all the aults have reached island molokai
+			// get all kids to molokai
 			if(adults_at_molokai == t_adults)
-			{ // if true we know that there is atleast one kid on oahu
-				while( kids_at_molokai != t_kids)
-				{
-					bg.ChildRowToOahu();
-					kids_at_molokai =  kids_at_molokai -1;
-					kids_at_oahu = kids_at_oahu + 1;
-					boat = Island.Oahu;
-
-					bg.ChildRowToMolokai();            // brind back the kids 
-					bg.ChildRideToMolokai();            // you just sent 
-					kids_at_oahu = kids_at_oahu - 2;
-					kids_at_molokai = kids_at_molokai + 2;
-					boat = Island.Molokai;
-
-				}
-				comlink.speak(t_adults +t_kids);
+			{
 				
-			}
-			if(kids_at_molokai != t_kids)
-			{   
-				myBoat.acquire();
-				bg.ChildRowToOahu();
-				kids_at_molokai =  kids_at_molokai -1;
-				kids_at_oahu = kids_at_oahu + 1;
-				boat = Island.Oahu;
-
-				bg.ChildRowToMolokai();            // brind back the kids 
-				bg.ChildRideToMolokai();            // you just sent 
-				kids_at_oahu = kids_at_oahu - 2;
-				kids_at_molokai = kids_at_molokai + 2;
-				boat = Island.Molokai;
-				myBoat.release();
-			}
-			if(kids_at_molokai != t_kids && t_adults != adults_at_molokai)
-			{
-				myBoat.acquire();
-				bg.ChildRowToOahu();
-				kids_at_molokai =  kids_at_molokai -1;
-				kids_at_oahu = kids_at_oahu + 1;
-				boat = Island.Oahu;
-				myBoat.release();
-			}
-		}
-		else if (boat == Island.Oahu)
-		{
-			// get lock want hold on to it unless nothing can be done
-			if(adults_at_oahu == 0)
-			{
-				// we know to just move all kids 
-				while (kids_at_oahu > 0) {
+				// cehck where boat is 
+				if(boat == Island.Oahu)
+				{
+					myBoat.acquire();
+					// there is exactly one kid on island
+					// with boat so send him to molokai
 					if(kids_at_oahu == 1)
 					{
 						bg.ChildRowToMolokai();
 						kids_at_oahu -= 1;
 						kids_at_molokai += 1;
 						boat = Island.Molokai;
+						comlink.speak(t_indiv); // at this stage everything is complete
+						myBoat.release();
+						break;
+
 					}
-					else if(kids_at_oahu >=2)
+					// we know we can send at least 2 at a time 
+					else if(kids_at_oahu >1)
+					{
+						while(kids_at_oahu >0)
+						{
+							if(kids_at_oahu >1)
+							{
+
+								bg.ChildRowToMolokai();
+								bg.ChildRideToMolokai();
+								kids_at_oahu -= 2;
+								kids_at_molokai += 2;
+								// now return to get more
+								bg.ChildRowToOahu();
+								kids_at_molokai -= 1;
+								kids_at_oahu += 1;
+								// boat = Island.Oahu;
+							}
+							else if(kids_at_oahu == 1)
+							{
+								bg.ChildRowToMolokai();
+								kids_at_oahu -= 1;
+								kids_at_molokai += 1;
+								boat = Island.Molokai;
+							}
+							
+						}
+						comlink.speak(t_indiv); // at this stage everything is complete
+						break;
+					}
+					else if(kids_at_oahu == 1)
 					{
 						bg.ChildRowToMolokai();
-						bg.ChildRideToMolokai();
-						kids_at_oahu -= 2;
-						kids_at_molokai += 2;
+						kids_at_oahu -= 1;
+						kids_at_molokai += 1;
 						boat = Island.Molokai;
-						// bring the boat back 
-						bg.ChildRowToOahu();
-						kids_at_molokai -= 1;
-						kids_at_oahu += 1;
-						boat = Island.Oahu;
+						comlink.speak(t_indiv); // at this stage everything is complete
+						break;
 					}
+					myBoat.release();
+				}
+				else if(boat == Island.Molokai)
+				{
+					if(kids_at_molokai != t_kids)
+					{
+						// there is one child left on island 
+						if(t_kids -kids_at_molokai == 1)
+						{
+							myBoat.acquire();
 
+							bg.ChildRowToOahu();
+							kids_at_molokai -= 1;
+							kids_at_oahu += 1;
+							boat = Island.Oahu;
+							
+							bg.ChildRowToMolokai();
+							bg.ChildRideToMolokai();
+							kids_at_molokai += 2;
+							kids_at_oahu -= 2;
+
+							boat = Island.Molokai;
+							myBoat.release();
+							comlink.speak(t_indiv);
+							break;
+						}
+						else 
+						{
+							myBoat.acquire();
+
+							bg.ChildRowToOahu();
+							kids_at_molokai -= 1;
+							kids_at_oahu += 1;
+							boat = Island.Oahu;
+							
+							bg.ChildRowToMolokai();
+							bg.ChildRideToMolokai();
+							kids_at_molokai += 2;
+							kids_at_oahu -= 2;
+
+							boat = Island.Molokai;
+							myBoat.release();
+						}	
+					}
 				}
 			}
-			//			if(adults_at_oahu >0)
-			//			{
-			//				myBoat.acquire(); 
-			//				bg.AdultRowToMolokai();
-			//
-			//				adults_at_oahu = adults_at_oahu - 1;
-			//				adults_at_molokai =  adults_at_molokai + 1;
-			//
-			//				boat = Island.Molokai; // update the boat location
-			//
-			//				// everytime we move an adult to molokai
-			//				// we need to return the boat to oahu everytime
-			//				if(kids_at_oahu != t_kids && kids_at_molokai != t_kids) {
-			//					bg.ChildRowToOahu();
-			//					kids_at_molokai =  kids_at_molokai -1;
-			//					kids_at_oahu = kids_at_oahu + 1;
-			//
-			//					boat = Island.Oahu; // update the boat location
-			//				}
-			//				myBoat.release();
-			//			}
-			if( kids_at_oahu > 0)
+			if(adults_at_molokai != t_adults)
 			{
 				myBoat.acquire();
-				// send the kdis to molokai
-				// if no kids has left the island 
-				// force some to leave
-				if(kids_at_oahu != t_kids)
+				// send boat back 
+				if(boat == Island.Molokai)
 				{
-					bg.ChildRowToMolokai();
-					bg.ChildRideToMolokai();
-					kids_at_oahu -= 2;
-					kids_at_molokai += 2;
-					boat = Island.Molokai;
-					// bring the boat back 
-					bg.ChildRowToOahu();
-					kids_at_molokai -= 1;
-					kids_at_oahu += 1;
-					boat = Island.Oahu;
-				}
-				if(kids_at_oahu == 1 )
-				{
-					bg.ChildRowToMolokai();
-					kids_at_oahu -= 1;
-					kids_at_molokai += 1;
-					boat = Island.Molokai;
-				}
-				else if(kids_at_oahu >=2)
-				{
-					bg.ChildRowToMolokai();
-					bg.ChildRideToMolokai();
-					kids_at_oahu -= 2;
-					kids_at_molokai += 2;
-					boat = Island.Molokai;
-					// bring the boat back 
 					bg.ChildRowToOahu();
 					kids_at_molokai -= 1;
 					kids_at_oahu += 1;
 					boat = Island.Oahu;
 				}
 				myBoat.release();
-
 			}
-		}
-		else 
-		{
+			// System.out.print("We stuck here???");
 			KThread.yield();
 		}
-
+		comlink.speak(t_indiv);
 	}
 	static void SampleItinerary()
 	{

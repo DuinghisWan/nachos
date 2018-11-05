@@ -35,6 +35,11 @@ public class Boat
 		myBoat = new Lock();            // lock boat while in use
 		boat = Island.Oahu;             // default island
 		comlink = new Communicator();
+		
+		
+		inital = true;		// inital state: The simulatio has just started no one has lef 
+							// island Oahu
+
 
 		// create runnables for adults and cildren
 		Runnable adultS = new Runnable()
@@ -62,7 +67,14 @@ public class Boat
 	}
 	static void AdultItinerary()
 	{
-		// while the similation is not complete 
+		/** If the inital state aka the start of the 
+		 *  simulation, no adult is allowed to do anything
+		 *  untill there is at least one kid on each island
+		 **/
+		while(inital)
+		{
+			KThread.yield(); // an adult thread must yiled to eliminate busy waiting 
+		}
 		while(!(t_adults == adults_at_molokai && t_kids == kids_at_molokai))
 		{
 		
@@ -70,7 +82,7 @@ public class Boat
 				// check if there is at least 1 kido on molokai
 				// since we know the total num of kids from the start
 				// if these dont match we know there least 1 kido on molokai
-				if(kids_at_oahu != t_kids && kids_at_molokai != t_kids){
+				if(kids_at_oahu != t_kids /*&& kids_at_molokai != t_kids*/){
 					if(adults_at_oahu >0){
 						// we need to send some adults to molokai
 
@@ -102,6 +114,28 @@ public class Boat
 	}
 	static void ChildItinerary()
 	{
+		/** Move children around to have at least one kid on 
+		 *  each island if we are in initial state
+		 **/
+		if(inital)
+		{
+			myBoat.acquire();
+			bg.ChildRowToMolokai();
+			bg.ChildRideToMolokai();
+
+			kids_at_molokai +=2 ; 
+			kids_at_oahu -= 2;
+			boat = Island.Molokai;
+
+			bg.ChildRowToOahu();
+			kids_at_oahu +=1;
+			kids_at_molokai -= 1;
+			boat = Island.Oahu;
+
+			inital = false;
+			myBoat.release();
+		}
+		else { 
 		while(!(t_adults == adults_at_molokai && t_kids == kids_at_molokai))
 		{
 			// if all the aults have reached island molokai
@@ -228,6 +262,7 @@ public class Boat
 			KThread.yield();
 		}
 		comlink.speak(t_indiv);
+		}
 	}
 	static void SampleItinerary()
 	{
@@ -245,7 +280,7 @@ public class Boat
 	protected static int t_adults;
 	protected static int t_kids;
 	protected static int t_indiv;
-
+	protected static boolean inital;
 	protected static int adults_at_oahu; 
 	protected static int kids_at_oahu;
 

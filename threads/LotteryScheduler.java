@@ -273,12 +273,10 @@ public class LotteryScheduler extends Scheduler {
 							effectivePriority += otherEffectivePriority;
 						}
 					}
-                }
+				}
+				
+				effectivePriority += priority;
             }
-
-			// If the calculated priority was less than the current priority, use the
-			// current priority
-			effectivePriority = Math.max(effectivePriority, priority);
 
 			return effectivePriority;          
         }

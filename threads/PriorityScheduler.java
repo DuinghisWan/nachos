@@ -252,7 +252,6 @@ public class PriorityScheduler extends Scheduler {
 		 * @return the effective priority of the associated thread.
 		 */
 		public int getEffectivePriority() {
-			System.out.println("Old effectivePriority");
 			// Only recalculate if value isnt cached
 			if (effectivePriority == priorityMinimum - 1) {
 

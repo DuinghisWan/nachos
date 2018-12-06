@@ -126,7 +126,7 @@ public class LotteryScheduler extends Scheduler {
 	}
 
 	/**
-	 * A <tt>ThreadQueue</tt> that sorts threads by priority.
+	 * A <tt>ThreadQueue</tt> that sorts threads by priority, choosing based on lottery.
 	 */
 	protected class LotteryQueue extends ThreadQueue {
 		LotteryQueue(boolean transferPriority) {
@@ -266,8 +266,7 @@ public class LotteryScheduler extends Scheduler {
 					// Iterate over the states in those queues
 					for (ThreadState threadState : previousQueue.pQueue) {
 
-						// Get the higher priority from previous queues and set the effective priority
-						// to it
+						// Get the priorities from previous queus and add them together
 						if (threadState != this) {
 							int otherEffectivePriority = threadState.getEffectivePriority();
 							effectivePriority += otherEffectivePriority;
